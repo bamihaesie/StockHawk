@@ -31,8 +31,9 @@
             android:exported="false" />
 
         <service
-            android:name=".sync.QuoteWidgetIntentService"
-            android:exported="false" />
+            android:name=".sync.CollectionWidgetRemoteViewsService"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
 
         <provider
             android:name=".data.StockProvider"
@@ -45,13 +46,13 @@
             android:exported="true"
             android:permission="android.permission.BIND_JOB_SERVICE" />
 
-        <receiver android:name=".ui.SimpleWidgetProvider" >
+        <receiver android:name=".ui.CollectionWidgetProvider">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="com.udacity.stockhawk.ACTION_DATA_UPDATED" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider"
-                android:resource="@xml/simple_widget_info" />
+                android:resource="@xml/collection_widget_info" />
         </receiver>
     </application>
 
