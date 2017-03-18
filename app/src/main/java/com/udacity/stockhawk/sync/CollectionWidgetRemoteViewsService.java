@@ -9,7 +9,12 @@ import android.widget.RemoteViewsService;
 
 import com.udacity.stockhawk.R;
 import com.udacity.stockhawk.data.Contract;
+import com.udacity.stockhawk.data.PrefUtils;
 import com.udacity.stockhawk.ui.DetailActivity;
+
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.Locale;
 
 
 public class CollectionWidgetRemoteViewsService extends RemoteViewsService {
@@ -17,11 +22,22 @@ public class CollectionWidgetRemoteViewsService extends RemoteViewsService {
     @Override
     public RemoteViewsFactory onGetViewFactory(Intent intent) {
         return new RemoteViewsFactory() {
+
+            private DecimalFormat dollarFormatWithPlus;
+            private DecimalFormat dollarFormat;
+            private DecimalFormat percentageFormat;
+
             private Cursor data = null;
 
             @Override
             public void onCreate() {
-                // Nothing to do
+                dollarFormat = (DecimalFormat) NumberFormat.getCurrencyInstance(Locale.US);
+                dollarFormatWithPlus = (DecimalFormat) NumberFormat.getCurrencyInstance(Locale.US);
+                dollarFormatWithPlus.setPositivePrefix("+$");
+                percentageFormat = (DecimalFormat) NumberFormat.getPercentInstance(Locale.getDefault());
+                percentageFormat.setMaximumFractionDigits(2);
+                percentageFormat.setMinimumFractionDigits(2);
+                percentageFormat.setPositivePrefix("+");
             }
 
             @Override
@@ -61,11 +77,31 @@ public class CollectionWidgetRemoteViewsService extends RemoteViewsService {
                 RemoteViews views = new RemoteViews(getPackageName(),
                         R.layout.collection_widget_list_item);
 
+                views.setInt(R.id.widget_list_item, "setBackgroundResource", R.drawable.selector);
+
                 String symbol = data.getString(Contract.Quote.POSITION_SYMBOL);
-                String price = data.getString(Contract.Quote.POSITION_PRICE);
+                float price = data.getFloat(Contract.Quote.POSITION_PRICE);
+                float rawAbsoluteChange = data.getFloat(Contract.Quote.POSITION_ABSOLUTE_CHANGE);
+                float percentageChange = data.getFloat(Contract.Quote.POSITION_PERCENTAGE_CHANGE);
+
+                String change = dollarFormatWithPlus.format(rawAbsoluteChange);
+                String percentage = percentageFormat.format(percentageChange / 100);
 
                 views.setTextViewText(R.id.symbol, symbol);
-                views.setTextViewText(R.id.price, price);
+                views.setTextViewText(R.id.price, dollarFormat.format(price));
+
+                if (rawAbsoluteChange > 0) {
+                    views.setInt(R.id.change, "setBackgroundResource", R.drawable.percent_change_pill_green);
+                } else {
+                    views.setInt(R.id.change, "setBackgroundResource", R.drawable.percent_change_pill_red);
+                }
+
+                if (PrefUtils.getDisplayMode(getBaseContext())
+                        .equals(getBaseContext().getString(R.string.pref_display_mode_absolute_key))) {
+                    views.setTextViewText(R.id.change, change);
+                } else {
+                    views.setTextViewText(R.id.change, percentage);
+                }
 
                 Intent intent = new Intent(getBaseContext(), DetailActivity.class);
                 intent.putExtra("symbol", symbol);
