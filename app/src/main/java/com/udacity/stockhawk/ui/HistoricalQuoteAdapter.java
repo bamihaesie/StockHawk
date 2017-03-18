@@ -11,9 +11,11 @@ import com.udacity.stockhawk.R;
 import com.udacity.stockhawk.model.HistoricalQuote;
 
 import java.math.BigDecimal;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -55,7 +57,7 @@ class HistoricalQuoteAdapter extends RecyclerView.Adapter<HistoricalQuoteAdapter
     }
 
     private String formatTimestamp(HistoricalQuote historicalQuote) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.FULL, Locale.getDefault());
         return dateFormat.format(new Date(historicalQuote.getTimestamp()));
     }
 
