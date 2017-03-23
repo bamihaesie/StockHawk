@@ -4,18 +4,27 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.widget.TextView;
 
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.AxisBase;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.formatter.IAxisValueFormatter;
+import com.github.mikephil.charting.utils.ColorTemplate;
 import com.udacity.stockhawk.R;
 import com.udacity.stockhawk.data.Contract;
 import com.udacity.stockhawk.model.HistoricalQuote;
 
 import java.math.BigDecimal;
+import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -30,8 +39,8 @@ public class DetailActivity extends AppCompatActivity {
     TextView detailSymbol;
 
     @SuppressWarnings("WeakerAccess")
-    @BindView(R.id.quoteHistory)
-    RecyclerView quoteHistoryRecyclerView;
+    @BindView(R.id.chart)
+    LineChart chart;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,12 +56,39 @@ public class DetailActivity extends AppCompatActivity {
 
         String history = extractHistory(symbol);
 
-        List<HistoricalQuote> historicalQuotes = parseHistory(history);
+        final List<HistoricalQuote> historicalQuotes = parseHistory(history);
         Log.i("STOCKS", historicalQuotes.toString());
 
-        HistoricalQuoteAdapter historicalQuoteAdapter = new HistoricalQuoteAdapter(historicalQuotes);
-        quoteHistoryRecyclerView.setAdapter(historicalQuoteAdapter);
-        quoteHistoryRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        List<Entry> entries = new ArrayList<>();
+        for (int i = 0; i < historicalQuotes.size(); i++) {
+            HistoricalQuote historicalQuote = historicalQuotes.get(historicalQuotes.size() - i - 1);
+            entries.add(
+                new Entry(i, historicalQuote.getPrice().floatValue())
+            );
+        }
+
+        LineDataSet dataSet = new LineDataSet(entries, "Time series");
+        dataSet.setColors(ColorTemplate.MATERIAL_COLORS);
+        LineData lineData = new LineData(dataSet);
+        chart.setData(lineData);
+
+
+        XAxis xAxis = chart.getXAxis();
+        xAxis.setGranularity(1f);
+        xAxis.setValueFormatter(new IAxisValueFormatter() {
+            @Override
+            public String getFormattedValue(float value, AxisBase axis) {
+                return formatTimestamp(historicalQuotes.get((int) (historicalQuotes.size() - value - 1)));
+            }
+        });
+
+        chart.invalidate(); // refresh
+
+    }
+
+    private String formatTimestamp(HistoricalQuote historicalQuote) {
+        DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());
+        return dateFormat.format(new Date(historicalQuote.getTimestamp()));
     }
 
     private String extractHistory(String symbol) {
